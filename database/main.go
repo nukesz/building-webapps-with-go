@@ -2,7 +2,12 @@ package main
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
+
+	"github.com/jinzhu/gorm"
+	_ "github.com/jinzhu/gorm"
+	_ "github.com/jinzhu/gorm/dialects/postgres"
 )
 
 type Book struct {
@@ -12,6 +17,14 @@ type Book struct {
 }
 
 func main() {
+	db, err := gorm.Open("postgres", "host=localhost port=5432 dbname=webapp-demo user=admin password=admin sslmode=disable")
+	if err != nil {
+		log.Fatalf("Could not connect to Postgres %v", err)
+	}
+	defer db.Close()
+
+	log.Println("Connected to Postgres!")
+	log.Println("Listening...")
 	http.HandleFunc("/", showBooks)
 	http.ListenAndServe(":8080", nil)
 }
