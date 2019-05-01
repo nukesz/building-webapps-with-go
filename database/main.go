@@ -11,6 +11,7 @@ import (
 )
 
 type Book struct {
+	ID      string `json:"id"`
 	Title   string `json:"title"`
 	Author  string `json:"author"`
 	Ignored int    `json:"-"`
@@ -22,22 +23,31 @@ func main() {
 		log.Fatalf("Could not connect to Postgres %v", err)
 	}
 	defer db.Close()
+	log.Println("Connected to Postgres!")
 
+	// Migrate the schema
 	db.AutoMigrate(&Book{})
 
-	log.Println("Connected to Postgres!")
+	// Create
+	db.Create(&Book{ID: "55", Title: "L1212", Author: "Norbert"})
+	db.Create(&Book{ID: "66", Title: "S2323", Author: "Unknown"})
+
 	log.Println("Listening...")
-	http.HandleFunc("/", showBooks)
+	http.Handle("/", showBooks(db))
 	http.ListenAndServe(":8080", nil)
 }
 
-func showBooks(w http.ResponseWriter, r *http.Request) {
-	book := Book{"Building Web Apps with Go", "Jeremy Saenz", 5}
-	js, err := json.MarshalIndent(book, "", "    ")
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.Write(js)
+func showBooks(db *gorm.DB) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Read
+		var book Book
+		db.First(&book, r.FormValue("id"))
+		js, err := json.MarshalIndent(book, "", "    ")
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(js)
+	})
 }
