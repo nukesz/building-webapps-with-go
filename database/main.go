@@ -23,6 +23,8 @@ func main() {
 	}
 	defer db.Close()
 
+	db.AutoMigrate(&Book{})
+
 	log.Println("Connected to Postgres!")
 	log.Println("Listening...")
 	http.HandleFunc("/", showBooks)
